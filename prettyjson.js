@@ -15,9 +15,11 @@ class prettifyJSON extends stream.Transform {
 
   _transform(binChunk, _encoding, callback) {
     const chunk = binChunk.toString(); // Default is binary buffer
+    const length = chunk.length;
     let output = '';
 
-    for (const i in chunk) {
+    let i = -1;
+    while (++i < length) {
       const char = chunk[i];
 
       if (this.escaped) {
@@ -29,17 +31,20 @@ class prettifyJSON extends stream.Transform {
       switch(char) {
         case '[':
         case '{':
-          this.level += 1;
+          if (/[\]}]/.test(chunk[1 + i])) {
+            output += char + chunk[1 + i++];
+            break;
+          }
+          this.level += this.quoted ? 0 : 1;
           output += this.quoted ? char : this.withNewLine(char);
           break;
         case ']':
         case '}':
-          this.level -= 1;
-          output += this.quoted || chunk[i + 1] === ',' ? char : this.withNewLine('', char);
+          this.level -= this.quoted ? 0 : 1;
+          output += this.quoted ? char : this.withNewLine('', char);
           break;
         case ',':
-          output += this.quoted ? char : 
-            /[[{]]/.test(chunk[i + 1]) ? char + ' ' : this.withNewLine(char);
+          output += this.quoted ? char : this.withNewLine(char);
           break;
         case '"':
           this.quoted = !this.quoted;
@@ -50,7 +55,10 @@ class prettifyJSON extends stream.Transform {
           output += char;
           break;
         case ':':
-          output += this.quoted? char : char + ' ';
+          output += this.quoted ? char : char + ' ';
+          break;
+        case '\n':
+          output += this.quoted ? char : '';
           break;
         default:
           output += char;
