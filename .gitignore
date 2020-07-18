@@ -1,0 +1,5 @@
+*.temp.js
+*.temp.json
+*.temp.ps1
+*.temp.txt
+*.temp.sh
