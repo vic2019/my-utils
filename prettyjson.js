@@ -5,6 +5,7 @@ const stream = require('stream');
 class prettifyJSON extends stream.Transform {
   constructor() {
     super();
+    this.tailPiece = '';
     this.level = 0;
     this.quoted = false;
     this.escaped = false;
@@ -14,8 +15,11 @@ class prettifyJSON extends stream.Transform {
   }
 
   _transform(binChunk, _encoding, callback) {
-    const chunk = binChunk.toString(); // Default is binary buffer
-    const length = chunk.length;
+    const chunk = this.tailPiece + binChunk.toString(); // Default is binary buffer
+    const lastChar = chunk[-1];
+    const endsInOpenBracket = lastChar === '[' || lastChar === '{';
+    this.tailPiece = endsInOpenBracket ? lastChar : '';
+    const length = endsInOpenBracket ? chunk.length - 1 : chunk.length;
     let output = '';
 
     let i = -1;
@@ -70,13 +74,14 @@ class prettifyJSON extends stream.Transform {
   }
 
   _flush(callback) {
+    this.push(this.tailPiece);
     callback();
   }
 }
 
 
 const filepath = path.resolve(__dirname, process.argv[2]);
-const outputFilepath = filepath.slice(-filepath.length, -5).concat('_pretty.json');
+const outputFilepath = filepath.slice(-filepath.length, -5).concat('.out.json');
 console.log(filepath, '=>', outputFilepath);
 
 const readStream = fs.createReadStream(filepath);
