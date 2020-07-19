@@ -1,12 +1,12 @@
 #### A hash table (aka dictionary) re-implemented as an exercise ####
 
 
-ARRAY_LENGTH = 1000 # The index range of the hash table
-SALT = 2021 # A value used for the hash function. Could be any number.
+ARRAY_LENGTH = 419 # The index range of the hash table
+SALT = 123 # A value used for the hash function. Could be any integer.
 
 
 # Node object in a linked list. Each index in the hash table may point to
-# such a linked list.
+# a linked list consisting of these node objects.
 class Node:
     def __init__(self, key, value, next_node = None):
         self.key = key
@@ -16,19 +16,16 @@ class Node:
 
 class Hashtable:
     def __init__(self, pairs = []):
-        # Initialize the hash table. This is only for illustration purpose and
-        # is super inefficient because Python <list> is not fixed-length array.
-        self.__table = []
-        for i in range(0, ARRAY_LENGTH):
-            self.__table.append(None)
-            
+        # Initialize the hash table
+        self.__table = [None] * ARRAY_LENGTH
+     
         # Add key-value pairs
         j = 0
         while j < len(pairs):
             self.update(pairs[j], pairs[j + 1])
             j += 2
 
-        self.__reset_deleted() # Set self.__deleted to None  
+        self.__reset_deleted()  
         
     def get(self, key):
         index = self.__hash(key)
@@ -43,7 +40,7 @@ class Hashtable:
     def delete(self, key):
         index = self.__hash(key)
         self.__table[index] = self.__delete(self.__table[index], key)
-        deleted = self.__deleted # Will return the deleted key-value pair below
+        deleted = self.__deleted # Save the deleted node for later
         self.__reset_deleted()
         return None if deleted == None else (deleted.key, deleted.value)
 
@@ -70,7 +67,7 @@ class Hashtable:
         
 
     # A hash function is a function that converts a string of any size to an
-    # int of a fixed size. Here, the fixed size is 2 digit.        
+    # int of a fixed size.        
     def __hash(self, key):
         key = str(key)
         hash_value = 0
@@ -106,7 +103,7 @@ class Hashtable:
             node.next_node = self.__delete(node.next_node, key)
             return node
 
-    # Item that has just been deleted will be saved here temporarily
+    # Item that has just been deleted will be saved temporarily
     def __reset_deleted(self):
         self.__deleted = None
 
@@ -127,42 +124,6 @@ class Hashtable:
 
     def __repr__(self):
         return "<class 'hashtable'> " + '{'+ str(self.items())[1:-1] + '}'
-
-
-
-    ### This method is a test. It simulates hash collision (when different keys
-    ### return the same number). It is not part of the module's features
-    def run_test(self, INDEX = 0):
-        self.__table[INDEX] = self.__append(self.__table[INDEX], 'France', 'Paris')
-        self.__table[INDEX] = self.__append(self.__table[INDEX], 'US', 'DC')
-        self.__table[INDEX] = self.__append(self.__table[INDEX], 'China', 'Beijing')
-
-        assert self.__lookup(self.__table[INDEX], 'France').value == 'Paris'
-        assert self.__lookup(self.__table[INDEX], 'China').value == 'Beijing'
-        assert self.__lookup(self.__table[INDEX], 'US').value == 'DC'
-
-        self.__table[INDEX] = self.__delete(self.__table[INDEX], 'France')
-        deleted = self.__deleted
-        self.__reset_deleted()
-        assert deleted.value == 'Paris'
-        assert self.__lookup(self.__table[INDEX], 'France') == None
-        assert self.__lookup(self.__table[INDEX], 'US').value == 'DC'
-        assert self.__lookup(self.__table[INDEX], 'China').value == 'Beijing'
-
-        self.__table[INDEX] = self.__delete(self.__table[INDEX], 'US')
-        deleted = self.__deleted
-        self.__reset_deleted()
-        assert deleted.value == 'DC'
-        assert self.__lookup(self.__table[INDEX], 'France') == None
-        assert self.__lookup(self.__table[INDEX], 'US') == None
-        assert self.__lookup(self.__table[INDEX], 'China').value == 'Beijing'
-        
-        self.__table[INDEX] = self.__delete(self.__table[INDEX], 'China')
-        deleted = self.__deleted
-        self.__reset_deleted()
-        assert self.__lookup(self.__table[INDEX], 'France') == None
-        assert self.__lookup(self.__table[INDEX], 'US') == None
-        assert self.__lookup(self.__table[INDEX], 'China') == None
 
 
 
@@ -192,20 +153,39 @@ assert tab.get('a') == None
 assert tab.get('b') == None
 assert tab.delete('b') == None
 
-tab.run_test(0)
-tab.run_test(999)
+tab.clear()
+assert tab.items() == []
 
-import random
-for i in range(10000):
-    key = str(random.randint(0, 10000))
-    value = str(random.randint(0, 10000))
-    assert tab.update(key, value) == (key, value)
-    assert tab.get(key) == value
-    assert tab.delete(key) == (key, value)
-    assert tab.get(key) == None
+temp = ARRAY_LENGTH
+ARRAY_LENGTH = 1 # Force a hash collision (i.e. different keys produce the same index)
+tab = Hashtable(['CA', 'Sacramento', 'TX', 'Austin', 'NY', 'NYC'])
+assert len(tab.keys()) == 3
+assert len(tab.items()) == 3
+assert len(tab) == 3
+assert tab.get('CA') == 'Sacramento'
+assert tab.get('TX') == 'Austin'
+assert tab.delete('TX') == ('TX', 'Austin')
+assert tab.get('TX') == None
+assert tab.get('CA') == 'Sacramento'
+tab2 = tab.copy()
+tab.update('NY', 'Big Apple')
+assert tab.get('NY') == 'Big Apple'
+assert tab2.get('NY') == 'NYC'
+
+assert tab.update('a', 42) == ('a', 42)
+assert tab.get('a') == 42
+assert tab.update('a', 'World Peace')
+assert tab.get('a') == 'World Peace'
+assert tab.delete('a') == ('a', 'World Peace')
+assert tab.delete('a') == None
+assert tab.get('a') == None
+
+assert tab.get('b') == None
+assert tab.delete('b') == None
 
 tab.clear()
 assert tab.items() == []
 
+ARRAY_LENGTH = temp
 print('(Tests passed)')
 
