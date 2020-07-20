@@ -1,7 +1,7 @@
 #### A hash table (aka dictionary) re-implemented as an exercise ####
 
 
-ARRAY_LENGTH = 419 # The index range of the hash table
+TABLE_LENGTH = 419 # The index range of the hash table
 SALT = 123 # A value used for the hash function. Could be any integer.
 
 
@@ -16,8 +16,11 @@ class Node:
 
 class Hashtable:
     def __init__(self, pairs = []):
+        self.__table_length = TABLE_LENGTH
+        self.__salt = SALT
+
         # Initialize the hash table
-        self.__table = [None] * ARRAY_LENGTH
+        self.__table = [None] * self.__table_length
      
         # Add key-value pairs
         j = 0
@@ -28,31 +31,31 @@ class Hashtable:
         self.__reset_deleted()  
         
     def get(self, key):
-        index = self.__hash(key)
+        index = self.__hash(key, self.__table_length)
         result_node = self.__lookup(self.__table[index], key)
-        return None if result_node == None else result_node.value
+        return None if not result_node else result_node.value
 
     def update(self, key, value):
-        index = self.__hash(key)
+        index = self.__hash(key, self.__table_length)
         self.__table[index] = self.__append(self.__table[index], key, value)
         return (key, value)
 
     def delete(self, key):
-        index = self.__hash(key)
+        index = self.__hash(key, self.__table_length)
         self.__table[index] = self.__delete(self.__table[index], key)
         deleted = self.__deleted # Save the deleted node for later
         self.__reset_deleted()
-        return None if deleted == None else (deleted.key, deleted.value)
+        return None if not deleted else (deleted.key, deleted.value)
 
     def items(self):
         output = []
-        for i in range(ARRAY_LENGTH):
+        for i in range(self.__table_length):
             self.__items(self.__table[i], output)
         return output
 
     def keys(self):
         output = []
-        for i in range(ARRAY_LENGTH):
+        for i in range(self.__table_length):
             self.__keys(self.__table[i], output)
         return output
 
@@ -68,12 +71,12 @@ class Hashtable:
 
     # A hash function is a function that converts a string of any size to an
     # int of a fixed size.        
-    def __hash(self, key):
+    def __hash(self, key, table_length):
         key = str(key)
         hash_value = 0
         for char in key:
-            hash_value = ord(char) + SALT * hash_value
-        return abs(hash_value % ARRAY_LENGTH)
+            hash_value = ord(char) + self.__salt * hash_value
+        return abs(hash_value % table_length)
 
     def __lookup(self, node, key):
         if node == None:
@@ -134,58 +137,49 @@ assert len(tab.items()) == 3
 assert len(tab) == 3
 assert tab.get('CA') == 'Sacramento'
 assert tab.get('TX') == 'Austin'
+assert tab.get('FL') == None
 assert tab.delete('TX') == ('TX', 'Austin')
 assert tab.get('TX') == None
+assert len(tab.keys()) == 2
 assert tab.get('CA') == 'Sacramento'
+assert tab.delete('FL') == None
+assert len(tab) == 2
+assert tab.update('CA', 'Sac.') == ('CA', 'Sac.')
+assert tab.get('CA') == 'Sac.'
+
 tab2 = tab.copy()
 tab.update('NY', 'Big Apple')
 assert tab.get('NY') == 'Big Apple'
 assert tab2.get('NY') == 'NYC'
-
-assert tab.update('a', 42) == ('a', 42)
-assert tab.get('a') == 42
-assert tab.update('a', 'World Peace')
-assert tab.get('a') == 'World Peace'
-assert tab.delete('a') == ('a', 'World Peace')
-assert tab.delete('a') == None
-assert tab.get('a') == None
-
-assert tab.get('b') == None
-assert tab.delete('b') == None
-
 tab.clear()
+tab2.clear()
 assert tab.items() == []
 
-temp = ARRAY_LENGTH
-ARRAY_LENGTH = 1 # Force a hash collision (i.e. different keys produce the same index)
+temp = TABLE_LENGTH
+TABLE_LENGTH = 1
 tab = Hashtable(['CA', 'Sacramento', 'TX', 'Austin', 'NY', 'NYC'])
 assert len(tab.keys()) == 3
 assert len(tab.items()) == 3
 assert len(tab) == 3
 assert tab.get('CA') == 'Sacramento'
 assert tab.get('TX') == 'Austin'
+assert tab.get('FL') == None
 assert tab.delete('TX') == ('TX', 'Austin')
 assert tab.get('TX') == None
+assert len(tab.keys()) == 2
 assert tab.get('CA') == 'Sacramento'
+assert tab.delete('FL') == None
+assert len(tab) == 2
+assert tab.update('CA', 'Sac.') == ('CA', 'Sac.')
+assert tab.get('CA') == 'Sac.'
+
 tab2 = tab.copy()
 tab.update('NY', 'Big Apple')
 assert tab.get('NY') == 'Big Apple'
 assert tab2.get('NY') == 'NYC'
-
-assert tab.update('a', 42) == ('a', 42)
-assert tab.get('a') == 42
-assert tab.update('a', 'World Peace')
-assert tab.get('a') == 'World Peace'
-assert tab.delete('a') == ('a', 'World Peace')
-assert tab.delete('a') == None
-assert tab.get('a') == None
-
-assert tab.get('b') == None
-assert tab.delete('b') == None
-
+tab.clear()
 tab.clear()
 assert tab.items() == []
 
-ARRAY_LENGTH = temp
+TABLE_LENGTH = temp
 print('(Tests passed)')
-
