@@ -21,14 +21,17 @@ class Hashtable:
 
         # Initialize the hash table
         self.__table = [None] * self.__table_length
+        self.__reset_deleted()
      
         # Add key-value pairs
-        j = 0
-        while j < len(pairs):
-            self.update(pairs[j], pairs[j + 1])
-            j += 2
-
-        self.__reset_deleted()  
+        if len(pairs) and type(pairs[0]) is tuple: # Or isinstance(pairs[0], tuple)
+            for key, value in pairs:
+                self.update(key, value)
+        else: # Use alternative input format if applicable
+            j = 0
+            while j < len(pairs):
+                self.update(pairs[j], pairs[j + 1])
+                j += 2
         
     def get(self, key):
         index = self.__hash(key, self.__table_length)
@@ -151,8 +154,13 @@ tab2 = tab.copy()
 tab.update('NY', 'Big Apple')
 assert tab.get('NY') == 'Big Apple'
 assert tab2.get('NY') == 'NYC'
+tab3 = Hashtable([(1, 1.3), ('Two', 2), (3.5, ['a', 'b', 'c'])])
+assert len(tab3) == 3
+assert tab3.get('Two') == 2
+assert tab3.get(3.5).pop() == 'c'
 tab.clear()
 tab2.clear()
+tab3.clear()
 assert tab.items() == []
 
 temp = TABLE_LENGTH
@@ -177,8 +185,13 @@ tab2 = tab.copy()
 tab.update('NY', 'Big Apple')
 assert tab.get('NY') == 'Big Apple'
 assert tab2.get('NY') == 'NYC'
+tab3 = Hashtable([(1, 1.3), ('Two', 2), (3.5, ['a', 'b', 'c'])])
+assert len(tab3) == 3
+assert tab3.get('Two') == 2
+assert tab3.get(3.5).pop() == 'c'
 tab.clear()
-tab.clear()
+tab2.clear()
+tab3.clear()
 assert tab.items() == []
 
 TABLE_LENGTH = temp
