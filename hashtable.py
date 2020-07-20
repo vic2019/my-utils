@@ -1,8 +1,9 @@
 #### A hash table (aka dictionary) re-implemented as an exercise ####
 
 
-TABLE_LENGTH = 419 # The index range of the hash table
+TABLE_LENGTH = 97 # The starting index range of the hash table
 SALT = 123 # A value used for the hash function. Could be any integer.
+LENGTH_RATIO = 1.3
 
 
 # Node object in a linked list. Each index in the hash table may point to
@@ -15,23 +16,16 @@ class Node:
 
 
 class Hashtable:
-    def __init__(self, pairs = []):
-        self.__table_length = TABLE_LENGTH
+    def __init__(self, pairs = [], table_length = TABLE_LENGTH):
+        self.__table_length = table_length
         self.__salt = SALT
+        self.__length_ratio = LENGTH_RATIO
+        self.__len = 0
+        self.__reset_deleted()
 
         # Initialize the hash table
-        self.__table = [None] * self.__table_length
-        self.__reset_deleted()
-     
-        # Add key-value pairs
-        if len(pairs) and type(pairs[0]) is tuple: # Or isinstance(pairs[0], tuple)
-            for key, value in pairs:
-                self.update(key, value)
-        else: # Use alternative input format if applicable
-            j = 0
-            while j < len(pairs):
-                self.update(pairs[j], pairs[j + 1])
-                j += 2
+        self.__table, self.__table_length = \
+            self.__create_table(pairs, self.__table_length)
         
     def get(self, key):
         index = self.__hash(key, self.__table_length)
@@ -39,6 +33,12 @@ class Hashtable:
         return None if not result_node else result_node.value
 
     def update(self, key, value):
+        if int(self.__len * self.__length_ratio) > self.__table_length:
+            new_table_length = self.__table_length * 2 + 1
+            pairs = self.items()
+            self.__table, self.__table_length = \
+                self.__create_table(pairs, new_table_length)
+                    
         index = self.__hash(key, self.__table_length)
         self.__table[index] = self.__append(self.__table[index], key, value)
         return (key, value)
@@ -71,6 +71,8 @@ class Hashtable:
             output.update(key, value)
         return output
         
+    def table_length(self):
+        return self.__table_length
 
     # A hash function is a function that converts a string of any size to an
     # int of a fixed size.        
@@ -80,6 +82,28 @@ class Hashtable:
         for char in key:
             hash_value = ord(char) + self.__salt * hash_value
         return abs(hash_value % table_length)
+
+    def __create_table(self, pairs, table_length):
+        # self.__append() has the side effect of incrementing self.__len.
+        # Reset __len for the new table
+        self.__len = 0
+        table = [None] * table_length
+
+        # Add key-value pairs
+        if len(pairs) and type(pairs[0]) is tuple: # Or isinstance(pairs[0], tuple)
+            for key, value in pairs:
+                index = self.__hash(key, table_length)
+                table[index] = self.__append(table[index], key, value)
+
+        else: # Use alternative input format if applicable
+            j = 0
+            while j < len(pairs):
+                key, value = pairs[j], pairs[j + 1]
+                index = self.__hash(key, table_length)
+                table[index] = self.__append(table[index], key, value)
+                j += 2
+
+        return (table, table_length)
 
     def __lookup(self, node, key):
         if node == None:
@@ -91,6 +115,7 @@ class Hashtable:
 
     def __append(self, node, key, value):
         if node == None:
+            self.__len += 1
             return Node(key, value)
         elif node.key == key:
             node.value = value
@@ -104,6 +129,7 @@ class Hashtable:
             return None
         elif node.key == key:
             self.__deleted = node
+            self.__len-= 1
             return node.next_node
         else:
             node.next_node = self.__delete(node.next_node, key)
@@ -126,7 +152,7 @@ class Hashtable:
         self.__keys(node.next_node, output)
 
     def __len__(self):
-        return len(self.keys())
+        return self.__len
 
     def __repr__(self):
         return "<class 'hashtable'> " + '{'+ str(self.items())[1:-1] + '}'
@@ -189,10 +215,22 @@ tab3 = Hashtable([(1, 1.3), ('Two', 2), (3.5, ['a', 'b', 'c'])])
 assert len(tab3) == 3
 assert tab3.get('Two') == 2
 assert tab3.get(3.5).pop() == 'c'
+
+# Set initial table length to 1
+tab4 = Hashtable([('???', None), ('empty', []), (3.14, 'Pi')], 1)
+assert tab4.table_length() <= 7
+assert len(tab4) == 3
+assert len(tab4.items()) == 3
+for i in range(0, 100):
+    tab4.update(i, i)
+assert len(tab4) == 103
+assert tab4.get(99) == 99
+assert tab4.table_length() > 103
 tab.clear()
 tab2.clear()
 tab3.clear()
-assert tab.items() == []
+tab4.clear()
+assert tab4.items() == []
 
 TABLE_LENGTH = temp
-print('(Tests passed)')
+print('[Tests passed]')
