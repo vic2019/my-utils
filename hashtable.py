@@ -38,7 +38,9 @@ class Hashtable:
 
     def update(self, key, value):
         if int(self.__len * self.__length_ratio) > self.__table_length:
-            new_table_length = self.__table_length * 2 + 1
+            base = self.__table_length if self.__table_length > self.__len \
+                   else self.__len
+            new_table_length = base * 2 + 1
             pairs = self.items()
             self.__table, self.__table_length = \
                 self.__create_table(pairs, new_table_length)
@@ -159,7 +161,9 @@ class Hashtable:
         return self.__len
 
     def __repr__(self):
-        return "<class 'hashtable'> " + '{'+ str(self.items())[1:-1] + '}'
+        return "<class 'hashtable'> {" + \
+        ', '.join(['{}: {}'.format(key, val) for key, val in self.items()[1:-1]]) \
+        + '}'
 
 
 
