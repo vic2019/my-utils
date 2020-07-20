@@ -16,12 +16,16 @@ class Node:
 
 
 class Hashtable:
-    def __init__(self, pairs = [], table_length = TABLE_LENGTH):
-        self.__table_length = table_length
+    def __init__(self, pairs = [], table_length = None):
         self.__salt = SALT
         self.__length_ratio = LENGTH_RATIO
         self.__len = 0
         self.__reset_deleted()
+        if table_length == None:
+            table_length = TABLE_LENGTH \
+            if int(len(pairs) * self.__length_ratio) + 1 < TABLE_LENGTH \
+            else len(pairs) * 2 + 1
+        self.__table_length = table_length
 
         # Initialize the hash table
         self.__table, self.__table_length = \
